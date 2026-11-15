@@ -1,0 +1,11 @@
+profiles/*.yaml.local
+profiles/*.yaml
+
+# Cho phép up file mẫu
+!profiles/*.yaml.example
+
+# Bỏ qua môi trường ảo và file rác của Python
+venv/
+__pycache__/
+*.pyc
+adscanner_report.html

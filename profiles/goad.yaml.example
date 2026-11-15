@@ -1,0 +1,21 @@
+# Profile mẫu cho GOAD (Game of Active Directory)
+# Điền IP và credentials thực tế của bạn vào
+name: goad
+domain: sevenkingdoms.local
+domain_dn: DC=sevenkingdoms,DC=local
+dc_ip: 192.168.56.10
+username: khal.drogo
+password: horses
+use_ldaps: false
+use_ntlm: true
+extra_domains:
+  - domain: north.sevenkingdoms.local
+    domain_dn: DC=north,DC=sevenkingdoms,DC=local
+    dc_ip: 192.168.56.11
+    username: khal.drogo
+    password: horses
+  - domain: essos.local
+    domain_dn: DC=essos,DC=local
+    dc_ip: 192.168.56.12
+    username: khal.drogo
+    password: horses

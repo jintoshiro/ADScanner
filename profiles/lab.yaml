@@ -1,0 +1,14 @@
+# Profile cho môi trường lab hiện tại
+name: test
+domain: test.local
+domain_dn: DC=lab,DC=local
+dc_ip: 10.0.0.12
+ldap_port: 389
+ldaps_port: 636
+use_ldaps: false
+use_ntlm: true
+username: Administrator
+password: "AD123@"
+adcs_server_ip: null
+adcs_ca_name: null
+extra_domains: []

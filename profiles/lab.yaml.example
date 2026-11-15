@@ -1,0 +1,14 @@
+# Profile cho môi trường lab
+name: lab
+domain: lab.local
+domain_dn: DC=lab,DC=local
+dc_ip: YOUR_DC_IP
+ldap_port: 389
+ldaps_port: 636
+use_ldaps: false
+use_ntlm: true
+username: "YOUR_USERNAME"
+password: "ENTER_YOUR_PASSWORD"
+adcs_server_ip: YOUR_ADCS_SERVER_IP
+adcs_ca_name: YOUR_ADCS_CA_NAME
+extra_domains: []

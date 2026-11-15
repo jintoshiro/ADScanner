@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADScanner - Báo cáo Đánh giá An toàn</title>
+    <style>
+        :root {
+            --bg: #0d1117; --panel: #161b22; --border: #30363d;
+            --text: #c9d1d9; --text-muted: #8b949e;
+            --critical: #f85149; --high: #db6d28; --medium: #d29922; --low: #3fb950; --pass: #3fb950;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 40px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+        .header h1 { margin: 0; color: #58a6ff; }
+        .header p { color: var(--text-muted); }
+        
+        .score-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 30px; text-align: center; margin-bottom: 40px; }
+        .score-value { font-size: 4rem; font-weight: bold; margin: 10px 0; }
+        .score-grade { font-size: 1.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .score-critical { color: var(--critical); }
+        .score-high { color: var(--high); }
+        .score-medium { color: var(--medium); }
+        .score-low { color: var(--low); }
+        
+        .finding { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .finding-header { padding: 15px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .finding-title { font-size: 1.1rem; font-weight: 600; margin: 0; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; color: #fff; }
+        .badge-CRITICAL { background: var(--critical); }
+        .badge-HIGH { background: var(--high); }
+        .badge-MEDIUM { background: var(--medium); }
+        .badge-LOW { background: var(--low); }
+        .badge-INFO { background: #6e7681; }
+        .badge-NOT_ASSESSED { background: var(--text-muted); }
+        
+        .finding-body { padding: 20px; }
+        .finding-desc { color: var(--text-muted); margin-bottom: 15px; line-height: 1.5; }
+        .finding-remediation { background: rgba(88, 166, 255, 0.1); border-left: 3px solid #58a6ff; padding: 10px 15px; border-radius: 4px; font-size: 0.9rem; margin-bottom: 15px; }
+        
+        .evidence { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.85rem; max-height: 200px; overflow-y: auto; }
+        .evidence-item { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed var(--border); }
+        .evidence-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .summary-table th, .summary-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
+        .summary-table th { color: var(--text-muted); font-weight: normal; }
+        
+        .coverage-warning { background: rgba(219, 109, 40, 0.1); border-left: 3px solid var(--high); padding: 10px 15px; margin-top: 15px; border-radius: 4px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ ADScanner Report</h1>
+            <p>Domain: <strong>{{ profile.primary.domain }}</strong> | DC IP: {{ profile.primary.dc_ip }}</p>
+        </div>
+
+        <!-- Điểm số -->
+        <div class="score-card">
+            <div class="score-grade 
+                {% if risk.grade == 'Nghiêm trọng' %}score-critical
+                {% elif risk.grade == 'Rủi ro cao' %}score-high
+                {% elif risk.grade == 'Rủi ro trung bình' %}score-medium
+                {% else %}score-low{% endif %}">
+                {{ risk.grade }}
+            </div>
+            <div class="score-value">{{ "%.1f"|format(risk.total_score) }}<span style="font-size: 1.5rem; color: var(--text-muted);">/100</span></div>
+            
+            <table class="summary-table">
+                <tr>
+                    <th>Tổng số Checks</th>
+                    <th>Critical</th>
+                    <th>High</th>
+                    <th>Medium</th>
+                    <th>Low</th>
+                </tr>
+                <tr>
+                    <td>{{ risk.total_checks }}</td>
+                    <td style="color: var(--critical)">{{ risk.severity_counts['CRITICAL'] }}</td>
+                    <td style="color: var(--high)">{{ risk.severity_counts['HIGH'] }}</td>
+                    <td style="color: var(--medium)">{{ risk.severity_counts['MEDIUM'] }}</td>
+                    <td style="color: var(--low)">{{ risk.severity_counts['LOW'] }}</td>
+                </tr>
+            </table>
+
+            <!-- Hiển thị độ phủ và cảnh báo -->
+            <p style="margin-top: 15px; color: var(--text-muted);">
+                Độ phủ: <strong>{{ risk.passed_checks + risk.failed_checks }}/{{ risk.total_checks }}</strong> check đã đánh giá
+            </p>
+            
+            {% if risk.is_lower_bound %}
+            <div class="coverage-warning">
+                ⚠ <strong>{{ risk.not_assessed_checks + risk.error_checks }}</strong> check chưa đánh giá được; 
+                điểm chỉ phản ánh phần đã đánh giá, <strong>điểm thực có thể cao hơn</strong>.
+            </div>
+            {% endif %}
+        </div>
+
+        <h2>Chi tiết Phát hiện (Findings)</h2>
+        
+        {% for res in results %}
+            {% if res.status.value == 'FAIL' %}
+            <div class="finding">
+                <div class="finding-header">
+                    <h3 class="finding-title">{{ res.check_id }}: {{ res.check_name }}</h3>
+                    <span class="badge badge-{{ res.finding.severity.value }}">{{ res.finding.severity.value }}</span>
+                </div>
+                <div class="finding-body">
+                    <div class="finding-desc">{{ res.finding.description }}</div>
+                    
+                    <div class="finding-remediation">
+                        <strong>💡 Khuyến nghị khắc phục:</strong> {{ res.finding.remediation }}
+                    </div>
+
+                    <div><strong>Bằng chứng ({{ res.finding.affected_count }} đối tượng):</strong></div>
+                    <div class="evidence">
+                        {% for obj in res.finding.affected_objects %}
+                            <div class="evidence-item">
+                                {% if obj.path %}
+                                    <strong>Path:</strong> {{ obj.path }} ({{ obj.steps }} bước)<br>
+                                    <span style="color: var(--text-muted);">Target: {{ obj.target }}</span>
+                                {% else %}
+                                    <strong>
+                                    {% if obj.sam %}{{ obj.sam }}
+                                    {% elif obj.trustee %}{{ obj.trustee }}
+                                    {% elif obj.template_name %}{{ obj.template_name }}
+                                    {% elif obj.gpo_name %}{{ obj.gpo_name }}
+                                    {% elif obj.resource %}{{ obj.resource }}
+                                    {% elif obj.object %}{{ obj.object }}
+                                    {% elif obj.issues %}Chính sách mật khẩu
+                                    {% else %}Object{% endif %}
+                                    </strong>
+                                    
+                                    {% if obj.dn %}<br><span style="color: var(--text-muted);">{{ obj.dn }}</span>{% endif %}
+                                    {% if obj.rights %}<br><span style="color: var(--high);">Rights: {{ obj.rights }}</span>{% endif %}
+                                    {% if obj.eku %}<br><span style="color: var(--text-muted);">EKU: {{ obj.eku | join(', ') }}</span>{% endif %}
+                                    {% if obj.issues %}<br><span style="color: var(--high);">Issues: {{ obj.issues | join('; ') }}</span>{% endif %}
+                                    {% if obj.allowed_principals %}<br><span style="color: var(--text-muted);">Allowed: {{ obj.allowed_principals | join(', ') }}</span>{% endif %}
+                                    {% if obj.targets %}<br><span style="color: var(--text-muted);">Targets: {{ obj.targets | join(', ') }}</span>{% endif %}
+                                    {% if obj.privileged_groups %}<br><span style="color: var(--high);">Privileged: {{ obj.privileged_groups | join(', ') }}</span>{% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Hiển thị các check NOT_ASSESSED -->
+        <h2>Không đánh giá được (NOT ASSESSED)</h2>
+        {% set has_na = false %}
+        {% for res in results %}
+            {% if res.status.value == 'NOT_ASSESSED' %}
+                {% set has_na = true %}
+                <div class="finding" style="opacity: 0.7;">
+                    <div class="finding-header">
+                        <h3 class="finding-title">{{ res.check_id }}: {{ res.check_name }}</h3>
+                        <span class="badge badge-NOT_ASSESSED">NOT ASSESSED</span>
+                    </div>
+                    <div class="finding-body">
+                        <div class="finding-desc"><strong>Lý do:</strong> {{ res.note or res.error }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% if not has_na %}
+            <p style="color: var(--text-muted);">✅ Tất cả các check đã được đánh giá đầy đủ.</p>
+        {% endif %}
+        
+        {% if risk.failed_checks == 0 %}
+            <div style="text-align: center; padding: 40px; color: var(--pass);">
+                <h2>✅ Hệ thống của bạn rất an toàn!</h2>
+                <p>Không phát hiện lỗ hổng nào dựa trên các tiêu chí đánh giá hiện tại.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

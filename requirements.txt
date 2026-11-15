@@ -1,0 +1,11 @@
+# === Thư viện cốt lõi ===
+ldap3>=2.9.1
+networkx>=3.1
+jinja2>=3.1
+
+# === AD CS (Certificate Services) ===
+impacket>=0.11.0
+
+# === Tiện ích (sẽ dùng ở các module sau) ===
+pyyaml>=6.0
+tabulate>=0.9.0
