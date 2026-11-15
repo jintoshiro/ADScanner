@@ -1,8 +1,8 @@
 # Profile cho môi trường lab hiện tại
-name: test
-domain: test.local
+name: lab
+domain: lab.local
 domain_dn: DC=lab,DC=local
-dc_ip: 10.0.0.12
+dc_ip: 10.0.0.10
 ldap_port: 389
 ldaps_port: 636
 use_ldaps: false

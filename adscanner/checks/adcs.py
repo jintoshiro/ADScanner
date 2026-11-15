@@ -58,7 +58,8 @@ class CheckD2DomainUsersEnroll(BaseCheck):
         affected = []
         for t in ctx.adcs_data["templates"]:
             for ace in t.get("enroll_aces", []):
-                if ace["trustee"] in (AUTH_USERS_SID,):
+                trustee = ace.get("trustee") 
+                if trustee in ("S-1-5-11", "...-513"):
                     affected.append({"template_name": t["name"], "trustee": "Authenticated Users"})
                     break
         if not affected: return None

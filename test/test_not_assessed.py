@@ -1,7 +1,7 @@
 import pytest
 from types import SimpleNamespace
 from adscanner.checks.base import ScanContext, CheckStatus
-from adscanner.checks.smb_probe import probe_smb_signing
+from adscanner.collector.smb_probe import probe_smb_signing
 
 def test_smb_probe_failure():
     """Mock SMBConnection để giả lập lỗi timeout."""

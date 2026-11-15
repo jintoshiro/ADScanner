@@ -40,6 +40,8 @@ class CheckB5LooseGPOOnPrivilegedOU(BaseCheck):
             return None
 
         legit_sids = default_legit_sids(domain_sid)
+        IGNORED_SIDS = {"S-1-3-0", "S-1-5-18", "S-1-5-11", "S-1-1-0"}
+        legit_sids.update(IGNORED_SIDS)
 
         # 2. Xác định các container nhạy cảm (Domain Root + OU của DC)
         sensitive_containers = {ctx.profile.primary.domain_dn.lower()}

@@ -29,6 +29,8 @@ from adscanner.checks import kerberos
 from adscanner.checks import attack_path
 from adscanner.checks import adcs
 from adscanner.checks import gpo
+from adscanner.checks import policy  # noqa
+from adscanner.checks import gpo_b5  # noqa
 __all__ = [
     "BaseCheck", "CheckResult", "CheckStatus", "Finding",
     "ScanContext", "Severity",

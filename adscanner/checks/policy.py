@@ -18,26 +18,32 @@ class CheckA4PasswordPolicy(BaseCheck):
 
     def _check(self, ctx: ScanContext) -> Finding | None:
         cfg = getattr(ctx, "domain_config", None)
-        if not cfg: return None
+        if not cfg: 
+            raise RuntimeError("Không có dữ liệu Domain Config")
         
         issues = []
         if cfg.min_pwd_length < 14:
             issues.append(f"minPwdLength = {cfg.min_pwd_length} (< 14)")
         if not (cfg.pwd_properties & 0x1):
-            issues.append("Không yêu cầu độ phức tạp mật khẩu")
+            issues.append("Không yêu cầu độ phức tạp")
         if cfg.lockout_threshold == 0:
-            issues.append("lockoutThreshold = 0 (không giới hạn đăng nhập sai)")
+            issues.append("lockoutThreshold = 0")
         if cfg.max_pwd_age_days is None:
-            issues.append("maxPwdAge = never (mật khẩu không bao giờ hết hạn ở cấp domain)")
+            issues.append("maxPwdAge = never")
         
-        # Kiểm tra PSO nếu có
         if cfg.psos:
             for pso in cfg.psos:
                 if pso["min_length"] < 14:
                     issues.append(f"PSO '{pso['name']}' có min_length = {pso['min_length']}")
         
         if not issues: return None
-        return self._make_finding([{"issues": issues}], f"{len(issues)} vấn đề chính sách mật khẩu.")
+        
+        # Trả về dictionary có key "issues" rõ ràng
+        affected = [{
+            "object": "Domain Password Policy",
+            "issues": issues
+        }]
+        return self._make_finding(affected, f"{len(issues)} vấn đề chính sách mật khẩu.")
 
 
 @register
@@ -51,15 +57,20 @@ class CheckB2PasswordPolicy(BaseCheck):
 
     def _check(self, ctx: ScanContext) -> Finding | None:
         cfg = getattr(ctx, "domain_config", None)
-        if not cfg: return None
+        if not cfg: 
+            raise RuntimeError("Không có dữ liệu Domain Config")
         
         if cfg.min_pwd_length < 8 or not (cfg.pwd_properties & 0x1):
-            return self._make_finding([{
-                "min_pwd_length": cfg.min_pwd_length,
-                "complexity": bool(cfg.pwd_properties & 0x1)
-            }], "Chính sách mật khẩu domain yếu.")
+            # Trả về dictionary có key "object" và "issues" để template hiển thị
+            affected = [{
+                "object": "Domain Password Policy",
+                "issues": [
+                    f"minPwdLength = {cfg.min_pwd_length}",
+                    f"Complexity = {bool(cfg.pwd_properties & 0x1)}"
+                ]
+            }]
+            return self._make_finding(affected, "Chính sách mật khẩu domain yếu.")
         return None
-
 
 @register
 class CheckB3AnonymousLDAP(BaseCheck):
@@ -67,36 +78,25 @@ class CheckB3AnonymousLDAP(BaseCheck):
     name = "Cho phép anonymous LDAP bind"
     category = "GPO Audit"
     severity = Severity.HIGH
-    description = "dsHeuristics cho phép anonymous LDAP operations."
-    remediation = "Đặt dsHeuristics = 0."
+    description = (
+        "Cấu hình dsHeuristics cho phép anonymous LDAP operations. "
+        "Kẻ tấn công có thể liệt kê thông tin AD mà không cần xác thực (nếu ACL cho phép)."
+    )
+    remediation = "Đặt dsHeuristics = 0 hoặc giá trị không bật fLDAPBlockAnonOps."
 
     def _check(self, ctx: ScanContext) -> Finding | None:
         cfg = getattr(ctx, "domain_config", None)
-        if not cfg or not cfg.ds_heuristics:
-            return None
+        if not cfg:
+            raise RuntimeError("Không có dữ liệu Domain Config")
         
-        # Ký tự thứ 7 (index 6): '2' = cho phép anonymous
+        if not cfg.ds_heuristics:
+            return None  # Chuỗi rỗng = mặc định an toàn (PASS)
+        
+        # Ký tự thứ 7 (index 6) là fLDAPBlockAnonOps, '2' = cho phép anonymous
         if len(cfg.ds_heuristics) >= 7 and cfg.ds_heuristics[6] == '2':
-            return self._make_finding([{
-                "ds_heuristics": cfg.ds_heuristics,
-                "flag": "fLDAPBlockAnonOps = 2"
-            }], "Cấu hình dsHeuristics cho phép anonymous LDAP.")
-        return None
-
-
-@register
-class CheckB4SMBSigning(BaseCheck):
-    id = "B4"
-    name = "DC không bắt buộc SMB Signing"
-    category = "GPO Audit"
-    severity = Severity.HIGH
-    description = "Domain Controller không bắt buộc SMB Signing, có thể bị SMB Relay."
-    remediation = "Bật 'Microsoft network server: Digitally sign communications (always)'."
-
-    def _check(self, ctx: ScanContext) -> Finding | None:
-        signing = getattr(ctx, "smb_signing_req", None)
-        if signing is False:
-            return self._make_finding([{
-                "dc_ip": ctx.profile.primary.dc_ip
-            }], "DC không bắt buộc SMB Signing.")
+            affected = [{
+                "object": "dsHeuristics Configuration",
+                "issues": [f"fLDAPBlockAnonOps = 2 (dsHeuristics={cfg.ds_heuristics})"]
+            }]
+            return self._make_finding(affected, "Cấu hình dsHeuristics cho phép anonymous LDAP.")
         return None

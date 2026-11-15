@@ -71,7 +71,8 @@ class CheckG1AttackPath(BaseCheck):
                     choke[(G.nodes[a]['name'], l, G.nodes[b]['name'])] += 1
                     
             affected.append({
-                "source": G.nodes[src_sid]['name'], 
+                "source": G.nodes[src_sid]['name'],
+                "target": G.nodes[path[-1]]['name'],
                 "steps": len(path) - 1,
                 "path": " ; ".join(steps)
             })

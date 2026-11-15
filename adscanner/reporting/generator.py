@@ -17,7 +17,7 @@ def generate_html_report(
     current_dir = os.path.dirname(os.path.abspath(__file__))
     template_dir = os.path.join(current_dir, "templates")
     
-    env = Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
     template = env.get_template("report.html")
     
     # Render HTML

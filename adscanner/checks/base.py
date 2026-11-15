@@ -125,7 +125,7 @@ class ScanContext:
     gpos: list = field(default_factory=list)
     domain_config: Any = None
     smb_signing_req: bool | None = None
-
+    collection_status: dict = field(default_factory=dict)
 
 # ============================================================
 # BASE CHECK
